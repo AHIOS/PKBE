@@ -1,0 +1,8 @@
+# Profile for Render.com Web Service.
+# Set env vars in the Render dashboard (see README / .env.example).
+# PORT is injected by Render and mapped via application.yml server.port=${PORT:8080}.
+
+pkbe:
+  # Prefer setting only PKBE_PUBLIC_BASE_URL=https://your-service.onrender.com
+  # rp-id and origins are then derived automatically.
+  require-device-bound: false

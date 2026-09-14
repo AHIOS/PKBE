@@ -1,0 +1,9 @@
+# Optional profile: spring.profiles.active=local
+# Defaults when no public URL is set (JVM / Simulator tests).
+
+pkbe:
+  public-base-url: http://localhost:8080
+  rp-id: localhost
+  origins: http://localhost:8080,https://localhost
+  apple-team-id: TEAMID
+  ios-bundle-id: com.uci.pkbe

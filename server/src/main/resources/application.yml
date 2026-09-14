@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8080}
+  # Render / tunnels terminate TLS; trust X-Forwarded-* when present
+  forward-headers-strategy: framework
+
+pkbe:
+  # Prefer PKBE_PUBLIC_BASE_URL; on Render, RENDER_EXTERNAL_URL is injected automatically.
+  public-base-url: ${PKBE_PUBLIC_BASE_URL:${RENDER_EXTERNAL_URL:}}
+  rp-id: ${PKBE_RP_ID:}
+  rp-name: ${PKBE_RP_NAME:PKBE}
+  # Comma-separated. Empty => derive from public-base-url (plus https://<rp-id>).
+  origins: ${PKBE_ORIGINS:}
+  apple-team-id: ${PKBE_APPLE_TEAM_ID:TEAMID}
+  ios-bundle-id: ${PKBE_IOS_BUNDLE_ID:com.uci.pkbe}
+  # Optional override of AASA webcredentials.apps (comma-separated TEAMID.bundle). Empty => team + bundle.
+  aasa-apps: ${PKBE_AASA_APPS:}
+  # Phase 2 Android Digital Asset Links (optional until Android ships)
+  android-package-name: ${PKBE_ANDROID_PACKAGE_NAME:}
+  android-sha256-fingerprints: ${PKBE_ANDROID_SHA256_FINGERPRINTS:}
+  require-device-bound: ${PKBE_REQUIRE_DEVICE_BOUND:false}
+  challenge-ttl-seconds: ${PKBE_CHALLENGE_TTL_SECONDS:120}
+
+logging:
+  level:
+    com.uci.pkbe: INFO

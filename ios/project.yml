@@ -1,0 +1,46 @@
+name: PKBE
+options:
+  bundleIdPrefix: com.uci
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  configFiles:
+    Debug: Configs/Local.xcconfig
+    Release: Configs/Render.xcconfig
+settings:
+  PRODUCT_BUNDLE_IDENTIFIER: com.uci.pkbe
+  CURRENT_PROJECT_VERSION: 1
+  MARKETING_VERSION: 0.1.0
+  SWIFT_VERSION: "5.0"
+  TARGETED_DEVICE_FAMILY: "1"
+targets:
+  PKBE:
+    type: application
+    platform: iOS
+    sources:
+      - PKBE
+    configFiles:
+      Debug: Configs/Local.xcconfig
+      Release: Configs/Render.xcconfig
+    info:
+      path: PKBE/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSBluetoothAlwaysUsageDescription: Bluetooth is used by the system for nearby-device passkey activation.
+        NSBluetoothPeripheralUsageDescription: Bluetooth is used by the system for nearby-device passkey activation.
+        PKBERpId: $(PKBE_RP_ID)
+        PKBEBaseURL: $(PKBE_BASE_URL)
+    entitlements:
+      path: PKBE/PKBE.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - webcredentials:$(PKBE_RP_ID)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.uci.pkbe
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        INFOPLIST_KEY_CFBundleDisplayName: PKBE
+        INFOPLIST_KEY_LSRequiresIPhoneOS: YES

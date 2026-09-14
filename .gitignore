@@ -1,0 +1,14 @@
+.DS_Store
+.idea/
+*.iml
+.env
+server/.env
+server/.gradle/
+server/build/
+server/.idea/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcworkspace/xcuserdata/
+ios/.swiftpm/
+ios/build/
+*.hmap
+DerivedData/

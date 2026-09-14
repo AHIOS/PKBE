@@ -1,0 +1,36 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Connect repo AHIOS/PKBE; only server/ is built (rootDir).
+#
+# After deploy, Render injects RENDER_EXTERNAL_URL (used as public base URL fallback).
+# You still must set PKBE_APPLE_TEAM_ID for a real AASA.
+
+services:
+  - type: web
+    name: pkbe
+    runtime: docker
+    plan: free
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: PKBE_APPLE_TEAM_ID
+        sync: false
+      - key: PKBE_IOS_BUNDLE_ID
+        value: com.uci.pkbe
+      - key: PKBE_RP_NAME
+        value: PKBE
+      - key: PKBE_REQUIRE_DEVICE_BOUND
+        value: "false"
+      - key: PKBE_CHALLENGE_TTL_SECONDS
+        value: "120"
+      # Optional: force public URL instead of RENDER_EXTERNAL_URL
+      # - key: PKBE_PUBLIC_BASE_URL
+      #   sync: false
+      # Optional overrides:
+      # - key: PKBE_RP_ID
+      # - key: PKBE_ORIGINS
+      # - key: PKBE_AASA_APPS
+      # - key: PKBE_ANDROID_PACKAGE_NAME
+      # - key: PKBE_ANDROID_SHA256_FINGERPRINTS

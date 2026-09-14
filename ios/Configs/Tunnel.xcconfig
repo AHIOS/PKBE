@@ -1,0 +1,4 @@
+// Point at a local tunnel (mole / localtunnel / ngrok / cloudflared).
+// Replace BOTH values with your public hostname before generating / building.
+PKBE_RP_ID = YOUR_TUNNEL_HOST
+PKBE_BASE_URL = https:/$()/YOUR_TUNNEL_HOST
