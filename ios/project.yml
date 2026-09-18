@@ -5,7 +5,7 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   configFiles:
-    Debug: Configs/Local.xcconfig
+    Debug: Configs/Render.xcconfig
     Release: Configs/Render.xcconfig
 settings:
   PRODUCT_BUNDLE_IDENTIFIER: com.uci.pkbe
@@ -20,7 +20,7 @@ targets:
     sources:
       - PKBE
     configFiles:
-      Debug: Configs/Local.xcconfig
+      Debug: Configs/Render.xcconfig
       Release: Configs/Render.xcconfig
     info:
       path: PKBE/Info.plist
@@ -36,7 +36,9 @@ targets:
       path: PKBE/PKBE.entitlements
       properties:
         com.apple.developer.associated-domains:
-          - webcredentials:$(PKBE_RP_ID)
+          # ?mode=developer bypasses Apple CDN (needed while Render free-tier cold-starts
+          # cause SWCERR00301 Timeout on app-site-association.cdn-apple.com).
+          - webcredentials:$(PKBE_RP_ID)$(PKBE_ASSOC_MODE)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.uci.pkbe
@@ -44,3 +46,4 @@ targets:
         CODE_SIGN_STYLE: Automatic
         INFOPLIST_KEY_CFBundleDisplayName: PKBE
         INFOPLIST_KEY_LSRequiresIPhoneOS: YES
+    scheme: {}

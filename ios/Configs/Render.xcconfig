@@ -1,3 +1,7 @@
-// Render.com (or any permanent HTTPS host). Replace with your service hostname.
-PKBE_RP_ID = YOUR_SERVICE.onrender.com
-PKBE_BASE_URL = https:/$()/YOUR_SERVICE.onrender.com
+// Render.com — device demos.
+PKBE_RP_ID = pkbe-nv4k.onrender.com
+PKBE_BASE_URL = https:/$()/pkbe-nv4k.onrender.com
+// CRITICAL for Render free tier: Apple CDN timed out crawling AASA (SWCERR00301).
+// ?mode=developer makes iOS fetch AASA directly from your server.
+// Requires Developer Mode enabled on the iPhone. Remove for App Store builds.
+PKBE_ASSOC_MODE = ?mode=developer

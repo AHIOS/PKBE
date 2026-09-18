@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>webcredentials:$(PKBE_RP_ID)</string>
+		<string>webcredentials:$(PKBE_RP_ID)$(PKBE_ASSOC_MODE)</string>
 	</array>
 </dict>
 </plist>

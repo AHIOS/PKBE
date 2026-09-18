@@ -1,3 +1,5 @@
 // Local Simulator / Mac → Spring on localhost
+// Passkeys on a real device need a public HTTPS RP; use Tunnel or Render xcconfig instead.
 PKBE_RP_ID = localhost
 PKBE_BASE_URL = http:/$()/localhost:8080
+PKBE_ASSOC_MODE = ?mode=developer

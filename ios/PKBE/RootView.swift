@@ -58,11 +58,17 @@ struct HomeView: View {
     @Binding var loggedIn: Bool
     @State private var me: MeResponse?
     @State private var error: String?
+    @State private var diagnostics: String?
     @State private var busy = false
     private let passkeys = PasskeyService()
 
     var body: some View {
         List {
+            Section("Client config") {
+                LabeledContent("Bundle ID", value: Bundle.main.bundleIdentifier ?? "—")
+                LabeledContent("RP ID", value: Config.rpId)
+                LabeledContent("API", value: Config.baseURL.host ?? Config.baseURL.absoluteString)
+            }
             Section("This device") {
                 LabeledContent("Device ID", value: short(DeviceIdentity.deviceId))
                 LabeledContent("User", value: me?.username ?? SessionStore.username ?? "—")
@@ -82,6 +88,10 @@ struct HomeView: View {
                 Button("Refresh status") {
                     Task { await refresh() }
                 }
+                Button("Run association diagnostics") {
+                    Task { await runDiagnostics() }
+                }
+                .disabled(busy)
                 Button("Enroll this device") {
                     Task { await enroll() }
                 }
@@ -98,12 +108,22 @@ struct HomeView: View {
                 }
             }
             if let error {
-                Section {
-                    Text(error).foregroundStyle(.red)
+                Section("Error") {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+            }
+            if let diagnostics {
+                Section("Diagnostics (also in Xcode console as [PKBE])") {
+                    Text(diagnostics)
+                        .font(.system(.caption2, design: .monospaced))
+                        .textSelection(.enabled)
                 }
             }
             Section {
-                Text("Handover uses the system FIDO QR and caBLE. Use two iPhones with different Apple IDs so iCloud does not copy the passkey.")
+                Text("Handover uses the system FIDO QR and caBLE. Code 1004 usually means Associated Domains / AASA / RP ID mismatch. Use two iPhones with different Apple IDs so iCloud does not copy the passkey.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -122,6 +142,12 @@ struct HomeView: View {
         }
     }
 
+    private func runDiagnostics() async {
+        busy = true
+        defer { busy = false }
+        diagnostics = await PasskeyDiagnostics.runPreflight(expectedRpId: Config.rpId)
+    }
+
     private func enroll() async {
         busy = true
         defer { busy = false }
@@ -131,7 +157,7 @@ struct HomeView: View {
             me = try await APIClient.shared.registerVerify(credential: credential)
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
         }
     }
 
@@ -149,7 +175,7 @@ struct HomeView: View {
             me = try await APIClient.shared.handoverVerify(credential: assertion)
             error = nil
         } catch {
-            self.error = error.localizedDescription
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
         }
     }
 
