@@ -128,6 +128,8 @@ Configs:
 2. Phone B: same username, Activate via nearby device (pending enroll + hybrid QR).
 3. Scan QR with A, Face ID → B `ACTIVE`, A revoked.
 
+**Refresh + reconcile:** the RP does not learn about Passwords deletions by itself. Pull-to-refresh (or **Refresh + reconcile Passwords**) loads `/v1/me`, probes whether this device still has `thisDeviceCredentialId` via `preferImmediatelyAvailableCredentials`, and calls `POST /v1/unenroll` when the key is gone. Until that runs, the **Server registry** section still shows the DB row.
+
 ## Tests
 
 ```bash

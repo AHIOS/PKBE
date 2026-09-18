@@ -79,11 +79,14 @@ struct HomeView: View {
                 LabeledContent("Pending device", value: short(me?.pendingDeviceId))
             }
             if let cred = me?.activeCredential {
-                Section("Server active passkey") {
+                Section("Server registry (not Passwords)") {
                     LabeledContent("Credential", value: cred.credentialIdPrefix)
                     LabeledContent("AAGUID", value: cred.aaguid)
                     LabeledContent("Backup eligible (BE)", value: cred.backupEligible ? "yes" : "no")
                     LabeledContent("Backup state (BS)", value: cred.backupState ? "yes" : "no")
+                    Text("This is the RP database row. Deleting in Passwords does not remove it until Refresh + reconcile runs.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             Section("Actions") {
@@ -146,24 +149,40 @@ struct HomeView: View {
         do {
             var latest = try await APIClient.shared.me()
             localPasskey = "—"
-            if reconcileLocal, let credId = latest.thisDeviceCredentialId, latest.thisDeviceStatus != "NONE" {
-                let present = await passkeys.hasLocalPasskey(credentialIdBase64Url: credId)
-                if present {
-                    localPasskey = "present"
-                } else {
-                    localPasskey = "missing"
-                    PasskeyLog.info("Local passkey missing — clearing server enrollment for this device")
-                    latest = try await APIClient.shared.unenroll()
-                    error = "Passkey not found in Passwords on this device. Cleared server enrollment."
-                    me = latest
-                    return
-                }
-            } else if latest.thisDeviceStatus == "NONE" {
-                localPasskey = "none"
+
+            guard reconcileLocal else {
+                me = latest
+                return
             }
-            me = latest
-            if error?.contains("Cleared server enrollment") != true {
+
+            if latest.thisDeviceStatus == "NONE" {
+                localPasskey = "none (not enrolled on server)"
+                me = latest
+                if error?.contains("Cleared server enrollment") != true {
+                    error = nil
+                }
+                return
+            }
+
+            guard let credId = latest.thisDeviceCredentialId, !credId.isEmpty else {
+                localPasskey = "unknown (server missing credential id — redeploy RP)"
+                me = latest
+                error = "Server did not return thisDeviceCredentialId. Redeploy the RP so refresh can reconcile Passwords deletions."
+                return
+            }
+
+            switch await passkeys.localPasskeyPresence(credentialIdBase64Url: credId) {
+            case .present:
+                localPasskey = "present in Passwords"
+                me = latest
                 error = nil
+            case .absent:
+                localPasskey = "missing in Passwords"
+                PasskeyLog.info("Local passkey missing — clearing server enrollment for this device")
+                latest = try await APIClient.shared.unenroll()
+                me = latest
+                localPasskey = "none (cleared after Passwords delete)"
+                error = "Passkey not found in Passwords on this device. Cleared server enrollment."
             }
         } catch {
             self.error = (error as? APIError)?.message ?? error.localizedDescription

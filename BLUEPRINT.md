@@ -181,6 +181,7 @@ Header `X-Device-Id: <uuid>`.
   "thisDeviceStatus": "NONE | PENDING | ACTIVE",
   "activeDeviceId": "… or null",
   "pendingDeviceId": "… or null",
+  "thisDeviceCredentialId": "base64url credential id for THIS device, or null",
   "activeCredential": {
     "credentialIdPrefix": "abcd",
     "aaguid": "…",
@@ -189,6 +190,16 @@ Header `X-Device-Id: <uuid>`.
   }
 }
 ```
+
+`activeCredential` is the **server registry** row for the active device. It is independent of the Passwords app until the client reconciles.
+
+### `POST /v1/unenroll`
+
+```json
+{ "deviceId": "…" }
+```
+
+Clears ACTIVE and/or PENDING enrollment for this `deviceId` only (e.g. user deleted the passkey in Passwords). Other devices are untouched. Returns an updated `GET /v1/me` body.
 
 ### `POST /v1/register/options`
 

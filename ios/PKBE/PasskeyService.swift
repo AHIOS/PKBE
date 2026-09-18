@@ -2,6 +2,11 @@ import AuthenticationServices
 import Foundation
 import UIKit
 
+enum LocalPasskeyPresence {
+    case present
+    case absent
+}
+
 @MainActor
 final class PasskeyService: NSObject {
     func createPasskey(options: CreationOptions) async throws -> [String: Any] {
