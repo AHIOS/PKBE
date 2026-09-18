@@ -6,6 +6,8 @@ public record MeResponse(
         String thisDeviceStatus,
         String activeDeviceId,
         String pendingDeviceId,
+        /** Full base64url credential id for THIS device when ACTIVE or PENDING; used to probe Passwords app. */
+        String thisDeviceCredentialId,
         CredentialView activeCredential) {
 
     public record CredentialView(

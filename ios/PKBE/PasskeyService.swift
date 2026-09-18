@@ -95,6 +95,46 @@ final class PasskeyService: NSObject {
         }
     }
 
+    /// Whether Passwords still has this credential for our RP ID (local / iCloud, not hybrid).
+    /// Deleted passkeys fail quickly with `preferImmediatelyAvailableCredentials` and no UI.
+    /// If the key still exists, the system may prompt Face ID once.
+    func localPasskeyPresence(credentialIdBase64Url: String) async -> LocalPasskeyPresence {
+        let credentialId = Base64URL.decode(credentialIdBase64Url)
+        guard !credentialId.isEmpty else {
+            PasskeyLog.error("localPasskeyPresence: credential id failed to decode")
+            return .absent
+        }
+        let challenge = Data((0..<32).map { _ in UInt8.random(in: 0...255) })
+        let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: Config.rpId)
+        let request = provider.createCredentialAssertionRequest(challenge: challenge)
+        request.userVerificationPreference = .discouraged
+        request.allowedCredentials = [
+            ASAuthorizationPlatformPublicKeyCredentialDescriptor(credentialID: credentialId)
+        ]
+        PasskeyLog.info("localPasskeyPresence probe credentialPrefix=\(credentialIdBase64Url.prefix(12)) bytes=\(credentialId.count)")
+        do {
+            let credential = try await perform(
+                request,
+                operation: "local-presence",
+                rpId: Config.rpId,
+                preferImmediatelyAvailable: true
+            )
+            if let assertion = credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion {
+                let matched = assertion.credentialID == credentialId
+                PasskeyLog.info("localPasskeyPresence => present matchedId=\(matched)")
+                return matched ? .present : .absent
+            }
+            PasskeyLog.info("localPasskeyPresence => unexpected credential type, treating absent")
+            return .absent
+        } catch {
+            let detail = PasskeyDiagnostics.describeAuthorizationError(error)
+            PasskeyLog.info("localPasskeyPresence => absent/failed: \(detail)")
+            // preferImmediatelyAvailable: missing local key fails with canceled/failed and no QR sheet.
+            // Canceling Face ID while the key still exists also lands here — POC treats that as absent.
+            return .absent
+        }
+    }
+
     private func assertionDictionary(
         id: Data,
         assertion: ASAuthorizationPublicKeyCredentialAssertion
@@ -119,16 +159,21 @@ final class PasskeyService: NSObject {
     private func perform(
         _ requests: ASAuthorizationRequest...,
         operation: String,
-        rpId: String
+        rpId: String,
+        preferImmediatelyAvailable: Bool = false
     ) async throws -> ASAuthorizationCredential {
-        PasskeyLog.info("ASAuthorizationController.performRequests op=\(operation) rpId=\(rpId) requestCount=\(requests.count)")
+        PasskeyLog.info("ASAuthorizationController.performRequests op=\(operation) rpId=\(rpId) requestCount=\(requests.count) preferImmediate=\(preferImmediatelyAvailable)")
         return try await withCheckedThrowingContinuation { continuation in
             let controller = ASAuthorizationController(authorizationRequests: requests)
             let delegate = AuthDelegate(controller: controller, continuation: continuation, operation: operation)
             objc_setAssociatedObject(controller, "pkbe.delegate", delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             controller.delegate = delegate
             controller.presentationContextProvider = delegate
-            controller.performRequests()
+            if preferImmediatelyAvailable {
+                controller.performRequests(options: .preferImmediatelyAvailableCredentials)
+            } else {
+                controller.performRequests()
+            }
         }
     }
 }

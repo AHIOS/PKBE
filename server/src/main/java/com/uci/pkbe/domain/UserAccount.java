@@ -63,4 +63,28 @@ public final class UserAccount {
         this.pending = null;
         return this.active;
     }
+
+    /** Drop ACTIVE and/or PENDING rows owned by this deviceId. */
+    public boolean clearForDevice(String deviceId) {
+        boolean changed = false;
+        if (active != null && active.deviceId().equals(deviceId)) {
+            active = null;
+            changed = true;
+        }
+        if (pending != null && pending.deviceId().equals(deviceId)) {
+            pending = null;
+            changed = true;
+        }
+        return changed;
+    }
+
+    public DeviceCredential credentialForDevice(String deviceId) {
+        if (active != null && active.deviceId().equals(deviceId)) {
+            return active;
+        }
+        if (pending != null && pending.deviceId().equals(deviceId)) {
+            return pending;
+        }
+        return null;
+    }
 }

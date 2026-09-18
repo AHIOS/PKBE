@@ -85,6 +85,7 @@ class ActivationFlowTest {
         JsonNode meAfterA = verifyRegister(tokenA, DEVICE_A, passkeyA.create(createA.get("challenge").asText(), ORIGIN, RP_ID));
         assertThat(meAfterA.get("thisDeviceStatus").asText()).isEqualTo("ACTIVE");
         assertThat(meAfterA.get("activeDeviceId").asText()).isEqualTo(DEVICE_A);
+        assertThat(meAfterA.get("thisDeviceCredentialId").asText()).isNotBlank();
 
         JsonNode createB = startRegister(tokenB, DEVICE_B);
         SoftPasskey passkeyB = new SoftPasskey(userHandle(createB));
@@ -107,6 +108,30 @@ class ActivationFlowTest {
         JsonNode deviceAView = me(tokenA, DEVICE_A);
         assertThat(deviceAView.get("thisDeviceStatus").asText()).isEqualTo("NONE");
         assertThat(deviceAView.get("activeDeviceId").asText()).isEqualTo(DEVICE_B);
+    }
+
+    @Test
+    void unenrollClearsThisDeviceOnly() throws Exception {
+        String tokenA = login("alice");
+        String tokenB = login("alice");
+        JsonNode createA = startRegister(tokenA, DEVICE_A);
+        SoftPasskey passkeyA = new SoftPasskey(userHandle(createA));
+        verifyRegister(tokenA, DEVICE_A, passkeyA.create(createA.get("challenge").asText(), ORIGIN, RP_ID));
+
+        JsonNode createB = startRegister(tokenB, DEVICE_B);
+        SoftPasskey passkeyB = new SoftPasskey(userHandle(createB));
+        verifyRegister(tokenB, DEVICE_B, passkeyB.create(createB.get("challenge").asText(), ORIGIN, RP_ID));
+
+        MvcResult cleared = mvc.perform(post("/v1/unenroll")
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deviceId\":\"" + DEVICE_B + "\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = objectMapper.readTree(cleared.getResponse().getContentAsString());
+        assertThat(body.get("thisDeviceStatus").asText()).isEqualTo("NONE");
+        assertThat(body.get("activeDeviceId").asText()).isEqualTo(DEVICE_A);
+        assertThat(body.get("pendingDeviceId").isNull()).isTrue();
     }
 
     @Test

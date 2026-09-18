@@ -11,6 +11,7 @@ struct MeResponse: Decodable {
     let thisDeviceStatus: String
     let activeDeviceId: String?
     let pendingDeviceId: String?
+    let thisDeviceCredentialId: String?
     let activeCredential: CredentialView?
 
     struct CredentialView: Decodable {

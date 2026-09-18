@@ -22,6 +22,11 @@ final class APIClient {
         try await get("/v1/me")
     }
 
+    func unenroll() async throws -> MeResponse {
+        let body = try JSONSerialization.data(withJSONObject: ["deviceId": DeviceIdentity.deviceId])
+        return try await post("/v1/unenroll", body: body, authenticated: true)
+    }
+
     func registerOptions() async throws -> CreationOptions {
         let body = try JSONSerialization.data(withJSONObject: ["deviceId": DeviceIdentity.deviceId])
         return try await post("/v1/register/options", body: body, authenticated: true)

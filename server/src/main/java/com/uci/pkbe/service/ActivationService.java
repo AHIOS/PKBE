@@ -73,14 +73,33 @@ public class ActivationService {
             }
             String activeDeviceId = active == null ? null : active.deviceId();
             String pendingDeviceId = account.pending() == null ? null : account.pending().deviceId();
+            DeviceCredential mine = account.credentialForDevice(deviceId);
+            String thisCredId = mine == null ? null : mine.credentialId().getBase64Url();
             return new MeResponse(
                     account.username(),
                     deviceId,
                     account.statusFor(deviceId).name(),
                     activeDeviceId,
                     pendingDeviceId,
+                    thisCredId,
                     view);
         }
+    }
+
+    /**
+     * Clears server-side ACTIVE/PENDING enrollment for this device (e.g. user deleted the passkey in
+     * Passwords). Does not touch credentials owned by other devices.
+     */
+    public MeResponse unenroll(String username, String deviceId) {
+        requireDeviceId(deviceId);
+        UserAccount account = userStore.getOrCreate(username);
+        synchronized (account) {
+            boolean changed = account.clearForDevice(deviceId);
+            if (!changed) {
+                throw ApiException.unprocessable("NO_ENROLLMENT", "This device has no server enrollment to clear");
+            }
+        }
+        return me(username, deviceId);
     }
 
     public String startRegistration(String username, String deviceId, String sessionToken) {

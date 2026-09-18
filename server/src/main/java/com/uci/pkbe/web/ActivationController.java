@@ -53,6 +53,11 @@ public class ActivationController {
         return activationService.me(username(request), requireDevice(deviceId));
     }
 
+    @PostMapping("/v1/unenroll")
+    public MeResponse unenroll(HttpServletRequest request, @RequestBody DeviceRequest body) {
+        return activationService.unenroll(username(request), body.deviceId());
+    }
+
     @PostMapping(path = "/v1/register/options", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> registerOptions(HttpServletRequest request, @RequestBody DeviceRequest body) {
         String json = activationService.startRegistration(username(request), body.deviceId(), token(request));

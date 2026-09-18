@@ -59,6 +59,7 @@ struct HomeView: View {
     @State private var me: MeResponse?
     @State private var error: String?
     @State private var diagnostics: String?
+    @State private var localPasskey: String = "—"
     @State private var busy = false
     private let passkeys = PasskeyService()
 
@@ -72,12 +73,13 @@ struct HomeView: View {
             Section("This device") {
                 LabeledContent("Device ID", value: short(DeviceIdentity.deviceId))
                 LabeledContent("User", value: me?.username ?? SessionStore.username ?? "—")
-                LabeledContent("Status", value: me?.thisDeviceStatus ?? "—")
+                LabeledContent("Server status", value: me?.thisDeviceStatus ?? "—")
+                LabeledContent("Local passkey", value: localPasskey)
                 LabeledContent("Active device", value: short(me?.activeDeviceId))
                 LabeledContent("Pending device", value: short(me?.pendingDeviceId))
             }
             if let cred = me?.activeCredential {
-                Section("Active passkey") {
+                Section("Server active passkey") {
                     LabeledContent("Credential", value: cred.credentialIdPrefix)
                     LabeledContent("AAGUID", value: cred.aaguid)
                     LabeledContent("Backup eligible (BE)", value: cred.backupEligible ? "yes" : "no")
@@ -85,9 +87,10 @@ struct HomeView: View {
                 }
             }
             Section("Actions") {
-                Button("Refresh status") {
-                    Task { await refresh() }
+                Button("Refresh + reconcile Passwords") {
+                    Task { await refresh(reconcileLocal: true) }
                 }
+                .disabled(busy)
                 Button("Run association diagnostics") {
                     Task { await runDiagnostics() }
                 }
@@ -100,6 +103,10 @@ struct HomeView: View {
                     Task { await handover() }
                 }
                 .disabled(busy)
+                Button("Clear server enrollment", role: .destructive) {
+                    Task { await clearEnrollment() }
+                }
+                .disabled(busy || me?.thisDeviceStatus == "NONE")
                 Button("Log out", role: .destructive) {
                     Task {
                         await APIClient.shared.logout()
@@ -123,22 +130,55 @@ struct HomeView: View {
                 }
             }
             Section {
-                Text("Handover uses the system FIDO QR and caBLE. Code 1004 usually means Associated Domains / AASA / RP ID mismatch. Use two iPhones with different Apple IDs so iCloud does not copy the passkey.")
+                Text("Refresh loads server state, then checks whether this device still has the passkey in Passwords. If you deleted it there, enrollment is cleared on the server. Server rows are independent of the Passwords app until reconcile runs.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Activation")
-        .task { await refresh() }
-        .refreshable { await refresh() }
+        .task { await refresh(reconcileLocal: true) }
+        .refreshable { await refresh(reconcileLocal: true) }
     }
 
-    private func refresh() async {
+    private func refresh(reconcileLocal: Bool) async {
+        busy = true
+        defer { busy = false }
         do {
-            me = try await APIClient.shared.me()
-            error = nil
+            var latest = try await APIClient.shared.me()
+            localPasskey = "—"
+            if reconcileLocal, let credId = latest.thisDeviceCredentialId, latest.thisDeviceStatus != "NONE" {
+                let present = await passkeys.hasLocalPasskey(credentialIdBase64Url: credId)
+                if present {
+                    localPasskey = "present"
+                } else {
+                    localPasskey = "missing"
+                    PasskeyLog.info("Local passkey missing — clearing server enrollment for this device")
+                    latest = try await APIClient.shared.unenroll()
+                    error = "Passkey not found in Passwords on this device. Cleared server enrollment."
+                    me = latest
+                    return
+                }
+            } else if latest.thisDeviceStatus == "NONE" {
+                localPasskey = "none"
+            }
+            me = latest
+            if error?.contains("Cleared server enrollment") != true {
+                error = nil
+            }
         } catch {
-            self.error = error.localizedDescription
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
+        }
+    }
+
+    private func clearEnrollment() async {
+        busy = true
+        defer { busy = false }
+        do {
+            me = try await APIClient.shared.unenroll()
+            localPasskey = "none"
+            error = "Server enrollment cleared for this device."
+        } catch {
+            self.error = (error as? APIError)?.message ?? error.localizedDescription
         }
     }
 
@@ -155,6 +195,7 @@ struct HomeView: View {
             let options = try await APIClient.shared.registerOptions()
             let credential = try await passkeys.createPasskey(options: options)
             me = try await APIClient.shared.registerVerify(credential: credential)
+            localPasskey = "present"
             error = nil
         } catch {
             self.error = (error as? APIError)?.message ?? error.localizedDescription
@@ -173,6 +214,7 @@ struct HomeView: View {
             let assertionOptions = try await APIClient.shared.handoverOptions()
             let assertion = try await passkeys.assertHandover(options: assertionOptions)
             me = try await APIClient.shared.handoverVerify(credential: assertion)
+            localPasskey = "present"
             error = nil
         } catch {
             self.error = (error as? APIError)?.message ?? error.localizedDescription
