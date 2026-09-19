@@ -34,6 +34,7 @@ struct CreationOptions: Decodable {
     let challenge: String
     let timeout: Double?
     let authenticatorSelection: AuthenticatorSelection?
+    let hints: [String]?
 
     struct RelyingParty: Decodable {
         let id: String?
@@ -48,6 +49,7 @@ struct CreationOptions: Decodable {
 
     struct AuthenticatorSelection: Decodable {
         let userVerification: String?
+        let authenticatorAttachment: String?
     }
 }
 

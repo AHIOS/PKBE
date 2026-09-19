@@ -30,6 +30,7 @@ targets:
           - UIInterfaceOrientationPortrait
         NSBluetoothAlwaysUsageDescription: Bluetooth is used by the system for nearby-device passkey activation.
         NSBluetoothPeripheralUsageDescription: Bluetooth is used by the system for nearby-device passkey activation.
+        NSFaceIDUsageDescription: Face ID is used to create and use passkeys on this device.
         PKBERpId: $(PKBE_RP_ID)
         PKBEBaseURL: $(PKBE_BASE_URL)
     entitlements:

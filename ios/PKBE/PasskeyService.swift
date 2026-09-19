@@ -14,7 +14,7 @@ final class PasskeyService: NSObject {
         let userID = Base64URL.decode(options.user.id)
         let rpId = options.rp.id ?? Config.rpId
 
-        PasskeyLog.info("createPasskey start rpId=\(rpId) challengeBytes=\(challenge.count) userBytes=\(userID.count) userName=\(options.user.name)")
+        PasskeyLog.info("createPasskey start rpId=\(rpId) challengeBytes=\(challenge.count) userBytes=\(userID.count) userName=\(options.user.name) hints=\(options.hints ?? []) attachment=\(options.authenticatorSelection?.authenticatorAttachment ?? "nil")")
         let report = await PasskeyDiagnostics.runPreflight(expectedRpId: rpId)
         PasskeyLog.info("createPasskey preflight done\n\(report)")
 
@@ -25,9 +25,17 @@ final class PasskeyService: NSObject {
             userID: userID
         )
         request.userVerificationPreference = .required
+        // Platform provider only, no security-key request.
+        // preferImmediatelyAvailableCredentials tells iOS not to offer hybrid /
+        // "Save on another device" / security keys for this create.
 
         do {
-            let credential = try await perform(request, operation: "registration", rpId: rpId)
+            let credential = try await perform(
+                request,
+                operation: "registration",
+                rpId: rpId,
+                preferImmediatelyAvailable: true
+            )
             guard let registration = credential as? ASAuthorizationPlatformPublicKeyCredentialRegistration else {
                 throw APIError(error: "WEBAUTHN_FAILED", message: "Unexpected registration credential type")
             }

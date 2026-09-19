@@ -133,7 +133,7 @@ struct HomeView: View {
                 }
             }
             Section {
-                Text("Refresh loads server state, then checks whether this device still has the passkey in Passwords. If you deleted it there, enrollment is cleared on the server. Server rows are independent of the Passwords app until reconcile runs.")
+                Text("Enroll this device asks iOS for a local platform passkey only. Nearby QR is used later by Activate via nearby device, not during enroll. Refresh loads server state, then checks whether this device still has the passkey in Passwords. If you deleted it there, enrollment is cleared on the server.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
