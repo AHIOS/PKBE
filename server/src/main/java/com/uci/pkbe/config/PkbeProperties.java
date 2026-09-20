@@ -192,6 +192,23 @@ public class PkbeProperties {
                 .toList();
     }
 
+    /** Digital Asset Links require colon-separated uppercase SHA-256. */
+    public List<String> assetLinksSha256Fingerprints() {
+        return resolvedAndroidSha256Fingerprints().stream().map(PkbeProperties::colonHex).toList();
+    }
+
+    static String colonHex(String hex) {
+        String compact = hex.replace(":", "").toUpperCase(Locale.ROOT);
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i + 1 < compact.length(); i += 2) {
+            if (out.length() > 0) {
+                out.append(':');
+            }
+            out.append(compact, i, i + 2);
+        }
+        return out.toString();
+    }
+
     public boolean assetLinksConfigured() {
         return !androidPackageName.isBlank() && !resolvedAndroidSha256Fingerprints().isEmpty();
     }

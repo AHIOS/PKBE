@@ -10,5 +10,10 @@ ios/*.xcodeproj/xcuserdata/
 ios/*.xcworkspace/xcuserdata/
 ios/.swiftpm/
 ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
 *.hmap
 DerivedData/
+

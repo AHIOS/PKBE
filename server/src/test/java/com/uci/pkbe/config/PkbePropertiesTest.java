@@ -30,6 +30,7 @@ class PkbePropertiesTest {
         assertThat(properties.resolvedAasaApps()).containsExactly("ABCD.com.uci.pkbe", "ABCD.com.uci.pkbe.dev");
         assertThat(properties.assetLinksConfigured()).isTrue();
         assertThat(properties.resolvedAndroidSha256Fingerprints()).containsExactly("aabbcc", "ddeeff");
+        assertThat(properties.assetLinksSha256Fingerprints()).containsExactly("AA:BB:CC", "DD:EE:FF");
     }
 
     @Test

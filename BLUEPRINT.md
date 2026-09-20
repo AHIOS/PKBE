@@ -2,7 +2,7 @@
 
 Living specification. If this file conflicts with `proximity_passkey_activation_protocol.md` or `passkey_activation_blueprint.md`, **this file wins**.
 
-Phase 1 scope: Spring Boot relying party + thin iOS app. No web UI. No Android until phase 1 handover works on two iPhones.
+Phase 1 scope: Spring Boot relying party + thin iOS and Android apps. Same REST; OS-native passkey APIs.
 
 ---
 
@@ -25,8 +25,8 @@ We do **not** implement custom BLE, custom QR payloads, FCM, SSE, SOAP, or an SD
 
 | Topic | Decision |
 | --- | --- |
-| Clients | Mobile only. Phase 1 = iOS. Phase 2 = Android after iOS works. |
-| Web demo | None. RP is JSON + well-known files only. |
+| Clients | Mobile. iOS (`AuthenticationServices`) and Android (Credential Manager). |
+| Web demo | Embedded `/webview/` page for comparing Safari/WKWebView vs native sheets. RP is JSON + well-known files + that page. |
 | Credentials | One handover passkey per user (logical local-only). No second cloud-synced passkey. |
 | Backend | Spring Boot, in-memory stores, Yubico `webauthn-server-core`. |
 | Transport | OS-native hybrid / caBLE. App never opens a GATT socket. |
@@ -299,22 +299,28 @@ Use `Configs/Local.xcconfig`, `Tunnel.xcconfig`, or `Render.xcconfig` so URL and
 
 ---
 
-## 10. Phase 2 (not now)
+## 10. Android app
 
-Do not scaffold `android/` until iOS handover is verified.
+Path: `android/`. Jetpack Compose. Application id `com.uci.pkbe`.
 
-Then: Credential Manager, `preferImmediatelyAvailableCredentials = false` on handover, `/.well-known/assetlinks.json`. Same REST. No protocol change.
+- Digital Asset Links: `/.well-known/assetlinks.json` from `PKBE_ANDROID_PACKAGE_NAME` + `PKBE_ANDROID_SHA256_FINGERPRINTS`
+- Registration: `CreatePublicKeyCredentialRequest` with `preferImmediatelyAvailableCredentials = true`
+- Handover: `GetCredentialRequest` with `preferImmediatelyAvailableCredentials = false` (system can show hybrid QR)
+- Same REST as iOS. Native + WebView tabs.
+
+Product flavors: `local`, `tunnel`, `render`.
 
 ---
 
 ## 11. Verification (phase 1)
 
 1. AASA at `https://<rp-id>/.well-known/apple-app-site-association` → 200 JSON, no redirect.
-2. Phone A: login, enroll, `thisDeviceStatus=ACTIVE`.
-3. Phone B, **different Apple ID**, same username: pending enroll, handover, system QR, scan with A, B becomes ACTIVE, A revoked.
-4. Replay assertion → fail. Expired challenge → fail. Never two ACTIVE devices.
+2. Asset Links at `https://<rp-id>/.well-known/assetlinks.json` when Android is in use.
+3. Phone A: login, enroll, `thisDeviceStatus=ACTIVE`.
+4. Phone B, **different account**, same username: pending enroll, handover, system QR, scan with A, B becomes ACTIVE, A revoked.
+5. Replay assertion → fail. Expired challenge → fail. Never two ACTIVE devices.
 
-Hybrid cannot be proven in Simulator. Simulator may still hit login + options endpoints.
+Hybrid cannot be proven in Simulator / typical emulators.
 
 ---
 

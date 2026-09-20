@@ -14,7 +14,7 @@ pkbe:
   ios-bundle-id: ${PKBE_IOS_BUNDLE_ID:com.uci.pkbe}
   # Optional override of AASA webcredentials.apps (comma-separated TEAMID.bundle). Empty => team + bundle.
   aasa-apps: ${PKBE_AASA_APPS:}
-  # Phase 2 Android Digital Asset Links (optional until Android ships)
+  # Android Digital Asset Links (required for Credential Manager / WebView passkeys)
   android-package-name: ${PKBE_ANDROID_PACKAGE_NAME:}
   android-sha256-fingerprints: ${PKBE_ANDROID_SHA256_FINGERPRINTS:}
   require-device-bound: ${PKBE_REQUIRE_DEVICE_BOUND:false}

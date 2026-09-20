@@ -41,7 +41,7 @@ public class WellKnownController {
             Map<String, Object> target = new LinkedHashMap<>();
             target.put("namespace", "android_app");
             target.put("package_name", properties.getAndroidPackageName());
-            target.put("sha256_cert_fingerprints", properties.resolvedAndroidSha256Fingerprints());
+            target.put("sha256_cert_fingerprints", properties.assetLinksSha256Fingerprints());
 
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put(
