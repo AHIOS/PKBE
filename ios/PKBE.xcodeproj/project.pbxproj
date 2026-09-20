@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		110C451D6A94013E042D60EC /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F07F3D5010121E85802E233 /* Config.swift */; };
 		1C6E7085842C7EB57FE6D48D /* PasskeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B36A31DB575138B50F20E87 /* PasskeyService.swift */; };
+		24A8C51F51C33856EDABAE50 /* WebDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39059B2740E783409855A8BC /* WebDemoView.swift */; };
 		2C6AEC93C5EC2C35277DB25F /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57F297EEA104A7FB7D55B65 /* Models.swift */; };
 		532B4AD74DD7796BF644B90F /* PKBEApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3244A69C4CFB66D45F42A341 /* PKBEApp.swift */; };
 		5A0C8F1BB15D72F1D0E17154 /* Base64URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 487AF325B9350B8C9DBC9BE1 /* Base64URL.swift */; };
@@ -22,6 +23,7 @@
 		22219C348CD25488C34ABD49 /* PasskeyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyDiagnostics.swift; sourceTree = "<group>"; };
 		2A3016B0E1350122B3021F47 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3244A69C4CFB66D45F42A341 /* PKBEApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKBEApp.swift; sourceTree = "<group>"; };
+		39059B2740E783409855A8BC /* WebDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDemoView.swift; sourceTree = "<group>"; };
 		3F07F3D5010121E85802E233 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		475A0CF1EAC5BAE4AEF8D920 /* Render.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Render.xcconfig; sourceTree = "<group>"; };
 		487AF325B9350B8C9DBC9BE1 /* Base64URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64URL.swift; sourceTree = "<group>"; };
@@ -65,6 +67,7 @@
 				3244A69C4CFB66D45F42A341 /* PKBEApp.swift */,
 				48846A80335FE5C39F596A38 /* RootView.swift */,
 				C2FAE3125D64BDFA18B92FA8 /* SessionStore.swift */,
+				39059B2740E783409855A8BC /* WebDemoView.swift */,
 			);
 			path = PKBE;
 			sourceTree = "<group>";

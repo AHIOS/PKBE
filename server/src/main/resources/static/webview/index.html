@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PKBE WebView</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f2f2f7;
+      --card: #fff;
+      --text: #1c1c1e;
+      --muted: #6d6d72;
+      --line: #c6c6c8;
+      --accent: #007aff;
+      --danger: #ff3b30;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000;
+        --card: #1c1c1e;
+        --text: #f2f2f7;
+        --muted: #8e8e93;
+        --line: #38383a;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 16px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 16px 16px 8px;
+    }
+    h1 { font-size: 28px; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 13px; }
+    form.card, .card {
+      background: var(--card);
+      margin: 12px 16px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--line);
+      font-size: 15px;
+    }
+    .row:last-child { border-bottom: 0; }
+    .row span:first-child { color: var(--muted); flex-shrink: 0; }
+    .row span:last-child { text-align: right; word-break: break-all; }
+    label { display: block; padding: 12px 16px 4px; color: var(--muted); font-size: 13px; }
+    input {
+      width: calc(100% - 32px);
+      margin: 0 16px 12px;
+      padding: 10px 12px;
+      border: 0.5px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font: inherit;
+      text-align: left;
+      border-bottom: 0.5px solid var(--line);
+    }
+    button:last-child { border-bottom: 0; }
+    button:disabled { opacity: 0.4; }
+    button.danger { color: var(--danger); }
+    .note {
+      margin: 8px 16px 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .error {
+      margin: 12px 16px;
+      padding: 12px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--danger) 12%, var(--card));
+      color: var(--danger);
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .diag {
+      margin: 12px 16px 24px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--card);
+      font: 11px/1.4 ui-monospace, Menlo, monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WebView</h1>
+    <div class="sub">Same RP APIs via <code>navigator.credentials</code> in WKWebView. Device id is this page’s localStorage, not the Native tab.</div>
+  </header>
+
+  <form id="login-card" class="card" onsubmit="return false;">
+    <label for="username">Stub login</label>
+    <input id="username" value="alice" autocomplete="username" autocapitalize="none" />
+    <button id="login-btn" type="button">Continue</button>
+  </form>
+
+  <div id="app" class="hidden">
+    <div class="card" id="config"></div>
+    <div class="card" id="device"></div>
+    <div class="card hidden" id="registry"></div>
+    <div class="card" id="actions">
+      <button type="button" id="refresh-btn">Refresh server state</button>
+      <button type="button" id="diag-btn">Run association diagnostics</button>
+      <button type="button" id="enroll-btn">Enroll this device</button>
+      <button type="button" id="handover-btn">Activate via nearby device</button>
+      <button type="button" id="clear-btn" class="danger">Clear server enrollment</button>
+      <button type="button" id="logout-btn" class="danger">Log out</button>
+    </div>
+  </div>
+
+  <div id="error" class="error hidden"></div>
+  <pre id="diagnostics" class="diag hidden"></pre>
+  <p class="note">
+    Enroll uses the page origin as the WebAuthn origin (this host must be the RP ID).
+    iOS may still offer “Save on another device” here; that is the Safari/WKWebView create sheet, not the native AuthenticationServices one.
+    Nearby QR is for Activate via nearby device. Refresh here does not probe Passwords; use Native for reconcile.
+  </p>
+
+  <script>
+    const TOKEN_KEY = "pkbe.webview.token";
+    const USER_KEY = "pkbe.webview.username";
+    const DEVICE_KEY = "pkbe.webview.deviceId";
+
+    function deviceId() {
+      let id = localStorage.getItem(DEVICE_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(DEVICE_KEY, id);
+      }
+      return id;
+    }
+
+    function token() { return sessionStorage.getItem(TOKEN_KEY); }
+    function username() { return sessionStorage.getItem(USER_KEY); }
+
+    function setSession(t, u) {
+      sessionStorage.setItem(TOKEN_KEY, t);
+      sessionStorage.setItem(USER_KEY, u);
+    }
+
+    function clearSession() {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+    }
+
+    function short(value) {
+      if (!value) return "—";
+      return value.length > 8 ? value.slice(0, 8) : value;
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("error");
+      if (!msg) {
+        el.classList.add("hidden");
+        el.textContent = "";
+        return;
+      }
+      el.classList.remove("hidden");
+      el.textContent = msg;
+    }
+
+    function setBusy(busy) {
+      document.querySelectorAll("button").forEach((b) => { b.disabled = busy; });
+    }
+
+    function b64urlToBuf(s) {
+      const pad = "=".repeat((4 - (s.length % 4)) % 4);
+      const b64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out.buffer;
+    }
+
+    function bufToB64url(buf) {
+      const bytes = new Uint8Array(buf);
+      let s = "";
+      for (const b of bytes) s += String.fromCharCode(b);
+      return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    }
+
+    function decodeCreateOptions(options) {
+      const copy = structuredClone(options);
+      copy.challenge = b64urlToBuf(options.challenge);
+      copy.user.id = b64urlToBuf(options.user.id);
+      if (copy.excludeCredentials) {
+        copy.excludeCredentials = copy.excludeCredentials.map((c) => ({ ...c, id: b64urlToBuf(c.id) }));
+      }
+      return copy;
+    }
+
+    function decodeGetOptions(options) {
+      const copy = structuredClone(options);
+      copy.challenge = b64urlToBuf(options.challenge);
+      if (copy.allowCredentials) {
+        copy.allowCredentials = copy.allowCredentials.map((c) => ({ ...c, id: b64urlToBuf(c.id) }));
+      }
+      return copy;
+    }
+
+    function credentialToJson(cred) {
+      const r = cred.response;
+      const json = {
+        id: cred.id,
+        rawId: bufToB64url(cred.rawId),
+        type: cred.type,
+        response: {
+          clientDataJSON: bufToB64url(r.clientDataJSON)
+        },
+        clientExtensionResults: cred.getClientExtensionResults ? cred.getClientExtensionResults() : {}
+      };
+      if (r.attestationObject) {
+        json.response.attestationObject = bufToB64url(r.attestationObject);
+      } else {
+        json.response.authenticatorData = bufToB64url(r.authenticatorData);
+        json.response.signature = bufToB64url(r.signature);
+        if (r.userHandle) json.response.userHandle = bufToB64url(r.userHandle);
+      }
+      return json;
+    }
+
+    async function api(path, { method = "GET", body, auth = true } = {}) {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Device-Id": deviceId()
+      };
+      if (auth && token()) headers.Authorization = "Bearer " + token();
+      const res = await fetch(path, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      if (res.status === 204) return null;
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
+      if (!res.ok) {
+        const err = new Error((data && (data.message || data.error)) || ("HTTP " + res.status));
+        err.payload = data;
+        throw err;
+      }
+      return data;
+    }
+
+    function renderConfig(publicConfig) {
+      document.getElementById("config").innerHTML =
+        row("Origin", location.origin) +
+        row("RP ID", (publicConfig && publicConfig.rpId) || location.hostname) +
+        row("API", location.host);
+    }
+
+    function row(label, value) {
+      return `<div class="row"><span>${escapeHtml(label)}</span><span>${escapeHtml(value || "—")}</span></div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderMe(me) {
+      document.getElementById("device").innerHTML =
+        row("Device ID", short(deviceId())) +
+        row("User", (me && me.username) || username() || "—") +
+        row("Server status", (me && me.thisDeviceStatus) || "—") +
+        row("Active device", short(me && me.activeDeviceId)) +
+        row("Pending device", short(me && me.pendingDeviceId));
+
+      const registry = document.getElementById("registry");
+      if (me && me.activeCredential) {
+        const c = me.activeCredential;
+        registry.classList.remove("hidden");
+        registry.innerHTML =
+          row("Credential", c.credentialIdPrefix) +
+          row("AAGUID", c.aaguid) +
+          row("Backup eligible (BE)", c.backupEligible ? "yes" : "no") +
+          row("Backup state (BS)", c.backupState ? "yes" : "no");
+      } else {
+        registry.classList.add("hidden");
+        registry.innerHTML = "";
+      }
+      document.getElementById("clear-btn").disabled = !me || me.thisDeviceStatus === "NONE";
+    }
+
+    function showLoggedIn(on) {
+      document.getElementById("login-card").classList.toggle("hidden", on);
+      document.getElementById("app").classList.toggle("hidden", !on);
+    }
+
+    async function refresh() {
+      const me = await api("/v1/me");
+      renderMe(me);
+      return me;
+    }
+
+    async function login() {
+      const u = document.getElementById("username").value.trim().toLowerCase();
+      const res = await api("/v1/login", { method: "POST", body: { username: u }, auth: false });
+      setSession(res.token, res.username);
+      showLoggedIn(true);
+      await refresh();
+    }
+
+    async function enroll() {
+      const options = await api("/v1/register/options", { method: "POST", body: { deviceId: deviceId() } });
+      const cred = await navigator.credentials.create({ publicKey: decodeCreateOptions(options) });
+      if (!cred) throw new Error("No credential returned");
+      const me = await api("/v1/register/verify", {
+        method: "POST",
+        body: { deviceId: deviceId(), credential: credentialToJson(cred) }
+      });
+      renderMe(me);
+    }
+
+    async function handover() {
+      let me = await api("/v1/me");
+      if (me.thisDeviceStatus !== "PENDING") {
+        await enroll();
+        me = await api("/v1/me");
+      }
+      const options = await api("/v1/handover/options", { method: "POST", body: { deviceId: deviceId() } });
+      const assertion = await navigator.credentials.get({ publicKey: decodeGetOptions(options) });
+      if (!assertion) throw new Error("No assertion returned");
+      me = await api("/v1/handover/verify", {
+        method: "POST",
+        body: { deviceId: deviceId(), credential: credentialToJson(assertion) }
+      });
+      renderMe(me);
+    }
+
+    async function clearEnrollment() {
+      const me = await api("/v1/unenroll", { method: "POST", body: { deviceId: deviceId() } });
+      renderMe(me);
+    }
+
+    async function logout() {
+      try { await api("/v1/logout", { method: "POST" }); } catch (_) { /* ignore */ }
+      clearSession();
+      showLoggedIn(false);
+      showError("");
+    }
+
+    async function diagnostics() {
+      const lines = [];
+      lines.push("=== PKBE WebView preflight ===");
+      lines.push("origin=" + location.origin);
+      lines.push("hostname=" + location.hostname);
+      try {
+        const cfg = await api("/v1/public-config", { auth: false });
+        lines.push("server.rpId=" + cfg.rpId);
+        lines.push("server.publicBaseUrl=" + cfg.publicBaseUrl);
+        lines.push("server.origins=" + (cfg.origins || []).join(", "));
+        if (cfg.rpId !== location.hostname) {
+          lines.push("MISMATCH: page hostname != server.rpId (WebAuthn origin must match RP ID)");
+        }
+      } catch (e) {
+        lines.push("public-config FAILED: " + e.message);
+      }
+      try {
+        const url = location.origin + "/.well-known/apple-app-site-association";
+        const res = await fetch(url, { cache: "no-store" });
+        const body = await res.text();
+        lines.push("AASA status=" + res.status + " bytes=" + body.length);
+        lines.push(body.slice(0, 400));
+      } catch (e) {
+        lines.push("AASA fetch FAILED: " + e.message);
+      }
+      const el = document.getElementById("diagnostics");
+      el.classList.remove("hidden");
+      el.textContent = lines.join("\n");
+    }
+
+    async function wrap(fn) {
+      setBusy(true);
+      showError("");
+      try {
+        await fn();
+      } catch (e) {
+        showError(e.message || String(e));
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    document.getElementById("login-btn").onclick = () => wrap(login);
+    document.getElementById("refresh-btn").onclick = () => wrap(refresh);
+    document.getElementById("diag-btn").onclick = () => wrap(diagnostics);
+    document.getElementById("enroll-btn").onclick = () => wrap(enroll);
+    document.getElementById("handover-btn").onclick = () => wrap(handover);
+    document.getElementById("clear-btn").onclick = () => wrap(clearEnrollment);
+    document.getElementById("logout-btn").onclick = () => wrap(logout);
+
+    (async () => {
+      try {
+        const cfg = await api("/v1/public-config", { auth: false });
+        renderConfig(cfg);
+      } catch (_) {
+        renderConfig(null);
+      }
+      if (token()) {
+        showLoggedIn(true);
+        wrap(refresh);
+      }
+    })();
+  </script>
+</body>
+</html>

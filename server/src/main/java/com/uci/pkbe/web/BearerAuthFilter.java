@@ -30,7 +30,9 @@ public class BearerAuthFilter extends OncePerRequestFilter {
         return path.equals("/v1/login")
                 || path.equals("/v1/public-config")
                 || path.startsWith("/.well-known/")
-                || path.equals("/health");
+                || path.equals("/health")
+                || path.equals("/webview")
+                || path.startsWith("/webview/");
     }
 
     @Override
