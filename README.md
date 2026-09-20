@@ -122,6 +122,8 @@ Configs:
 2. Put a real Team ID in server env / AASA.
 3. Use **two iPhones with different Apple IDs** for proximity (same iCloud can sync the passkey and skip BLE).
 
+The iOS app has two tabs. **Native** uses `AuthenticationServices`. **WebView** loads `https://<rp-id>/webview/index.html` (same RP APIs via `navigator.credentials`). Passkeys in WKWebView require Associated Domains `webcredentials` for that host. The WebView tab keeps its own device id in page localStorage.
+
 ## Device walkthrough
 
 1. Phone A: log in as `alice`, Enroll this device → `ACTIVE`.

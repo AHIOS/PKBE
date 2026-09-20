@@ -4,11 +4,23 @@ struct RootView: View {
     @State private var loggedIn = SessionStore.token != nil
 
     var body: some View {
-        NavigationStack {
-            if loggedIn {
-                HomeView(loggedIn: $loggedIn)
-            } else {
-                LoginView(loggedIn: $loggedIn)
+        TabView {
+            NavigationStack {
+                if loggedIn {
+                    HomeView(loggedIn: $loggedIn)
+                } else {
+                    LoginView(loggedIn: $loggedIn)
+                }
+            }
+            .tabItem {
+                Label("Native", systemImage: "iphone")
+            }
+
+            NavigationStack {
+                WebDemoView()
+            }
+            .tabItem {
+                Label("WebView", systemImage: "safari")
             }
         }
     }

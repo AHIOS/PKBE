@@ -71,6 +71,17 @@ class ActivationFlowTest {
     }
 
     @Test
+    void webviewDemoPageIsUnauthenticatedHtml() throws Exception {
+        mvc.perform(get("/webview/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String type = result.getResponse().getContentType();
+                    assertThat(type).contains("text/html");
+                    assertThat(result.getResponse().getContentAsString()).contains("navigator.credentials");
+                });
+    }
+
+    @Test
     void meRequiresAuth() throws Exception {
         mvc.perform(get("/v1/me").header("X-Device-Id", DEVICE_A)).andExpect(status().isUnauthorized());
     }
