@@ -33,7 +33,7 @@
 		A57F297EEA104A7FB7D55B65 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		C2FAE3125D64BDFA18B92FA8 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CF4390C93E2BE7CF67C61E30 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
-		ECF72E473EEC88B441550107 /* PKBE.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PKBE.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ECF72E473EEC88B441550107 /* PKBE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKBE.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -148,6 +148,7 @@
 				1C6E7085842C7EB57FE6D48D /* PasskeyService.swift in Sources */,
 				A00236243CE4EB1762D6F844 /* RootView.swift in Sources */,
 				C19DB41752A526FE1880447A /* SessionStore.swift in Sources */,
+				24A8C51F51C33856EDABAE50 /* WebDemoView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
