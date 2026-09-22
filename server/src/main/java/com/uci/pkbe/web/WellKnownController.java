@@ -31,8 +31,8 @@ public class WellKnownController {
     }
 
     /**
-     * Digital Asset Links for Android (phase 2). Returns an empty array until package + fingerprints
-     * are configured via env.
+     * Digital Asset Links for Android. Package + SHA-256 default in application.yml; override with
+     * {@code PKBE_ANDROID_PACKAGE_NAME} / {@code PKBE_ANDROID_SHA256_FINGERPRINTS}.
      */
     @GetMapping(path = "/.well-known/assetlinks.json")
     public ResponseEntity<List<Map<String, Object>>> assetLinks() {

@@ -15,8 +15,8 @@ pkbe:
   # Optional override of AASA webcredentials.apps (comma-separated TEAMID.bundle). Empty => team + bundle.
   aasa-apps: ${PKBE_AASA_APPS:}
   # Android Digital Asset Links (required for Credential Manager / WebView passkeys)
-  android-package-name: ${PKBE_ANDROID_PACKAGE_NAME:}
-  android-sha256-fingerprints: ${PKBE_ANDROID_SHA256_FINGERPRINTS:}
+  android-package-name: ${PKBE_ANDROID_PACKAGE_NAME:com.uci.pkbe}
+  android-sha256-fingerprints: ${PKBE_ANDROID_SHA256_FINGERPRINTS:DB:6B:7A:0C:7E:BC:D9:96:4D:52:CC:1C:29:93:92:C9:BC:BA:F9:21:0A:99:4E:22:7F:F1:9C:17:06:9F:97:9F}
   require-device-bound: ${PKBE_REQUIRE_DEVICE_BOUND:false}
   challenge-ttl-seconds: ${PKBE_CHALLENGE_TTL_SECONDS:120}
 

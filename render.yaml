@@ -32,5 +32,7 @@ services:
       # - key: PKBE_RP_ID
       # - key: PKBE_ORIGINS
       # - key: PKBE_AASA_APPS
-      # - key: PKBE_ANDROID_PACKAGE_NAME
-      # - key: PKBE_ANDROID_SHA256_FINGERPRINTS
+      - key: PKBE_ANDROID_PACKAGE_NAME
+        value: com.uci.pkbe
+      - key: PKBE_ANDROID_SHA256_FINGERPRINTS
+        value: "DB:6B:7A:0C:7E:BC:D9:96:4D:52:CC:1C:29:93:92:C9:BC:BA:F9:21:0A:99:4E:22:7F:F1:9C:17:06:9F:97:9F"
