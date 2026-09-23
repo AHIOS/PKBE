@@ -20,6 +20,14 @@ pkbe:
   require-device-bound: ${PKBE_REQUIRE_DEVICE_BOUND:false}
   challenge-ttl-seconds: ${PKBE_CHALLENGE_TTL_SECONDS:120}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
 logging:
   level:
     com.uci.pkbe: INFO

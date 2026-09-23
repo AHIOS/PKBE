@@ -71,6 +71,17 @@ class ActivationFlowTest {
     }
 
     @Test
+    void swaggerAndOpenApiAreUnauthenticated() throws Exception {
+        mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists())
+                .andExpect(jsonPath("$.paths['/v1/login']").exists())
+                .andExpect(jsonPath("$.paths['/v1/handover/options']").exists())
+                .andExpect(jsonPath("$.paths['/.well-known/assetlinks.json']").exists());
+        mvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
     void webviewDemoPageIsUnauthenticatedHtml() throws Exception {
         mvc.perform(get("/webview/index.html"))
                 .andExpect(status().isOk())

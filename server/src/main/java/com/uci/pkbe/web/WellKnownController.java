@@ -1,6 +1,11 @@
 package com.uci.pkbe.web;
 
 import com.uci.pkbe.config.PkbeProperties;
+import com.uci.pkbe.web.dto.HealthResponse;
+import com.uci.pkbe.web.dto.PublicConfigResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,6 +17,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@SecurityRequirements
+@Tag(name = "Well-known", description = "Unauthenticated RP bootstrap, health, AASA, and Digital Asset Links")
 public class WellKnownController {
 
     private final PkbeProperties properties;
@@ -20,6 +27,7 @@ public class WellKnownController {
         this.properties = properties;
     }
 
+    @Operation(summary = "Apple App Site Association")
     @GetMapping(path = {"/.well-known/apple-app-site-association", "/apple-app-site-association"})
     public ResponseEntity<Map<String, Object>> appleAppSiteAssociation() {
         Map<String, Object> body = Map.of("webcredentials", Map.of("apps", properties.resolvedAasaApps()));
@@ -34,6 +42,7 @@ public class WellKnownController {
      * Digital Asset Links for Android. Package + SHA-256 default in application.yml; override with
      * {@code PKBE_ANDROID_PACKAGE_NAME} / {@code PKBE_ANDROID_SHA256_FINGERPRINTS}.
      */
+    @Operation(summary = "Android Digital Asset Links")
     @GetMapping(path = "/.well-known/assetlinks.json")
     public ResponseEntity<List<Map<String, Object>>> assetLinks() {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -58,25 +67,25 @@ public class WellKnownController {
                 .body(list);
     }
 
+    @Operation(summary = "Health")
     @GetMapping(path = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, String> health() {
-        return Map.of("status", "ok");
+    public HealthResponse health() {
+        return new HealthResponse("ok");
     }
 
-    /** Unauthenticated bootstrap for clients / ops: what RP this instance thinks it is. */
+    @Operation(summary = "Public RP config")
     @GetMapping(path = "/v1/public-config", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> publicConfig() {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("rpId", properties.resolvedRpId());
-        body.put("rpName", properties.getRpName());
-        body.put("publicBaseUrl", properties.resolvedPublicBaseUrl());
-        body.put("origins", properties.resolvedOrigins());
-        body.put("iosBundleId", properties.getIosBundleId());
-        body.put("aasaApps", properties.resolvedAasaApps());
-        body.put("androidPackageName", properties.getAndroidPackageName());
-        body.put("assetLinksConfigured", properties.assetLinksConfigured());
-        body.put("requireDeviceBound", properties.isRequireDeviceBound());
-        body.put("challengeTtlSeconds", properties.getChallengeTtlSeconds());
-        return ResponseEntity.ok(body);
+    public PublicConfigResponse publicConfig() {
+        return new PublicConfigResponse(
+                properties.resolvedRpId(),
+                properties.getRpName(),
+                properties.resolvedPublicBaseUrl(),
+                properties.resolvedOrigins(),
+                properties.getIosBundleId(),
+                properties.resolvedAasaApps(),
+                properties.getAndroidPackageName(),
+                properties.assetLinksConfigured(),
+                properties.isRequireDeviceBound(),
+                properties.getChallengeTtlSeconds());
     }
 }

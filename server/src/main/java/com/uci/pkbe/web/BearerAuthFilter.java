@@ -32,7 +32,10 @@ public class BearerAuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/.well-known/")
                 || path.equals("/health")
                 || path.equals("/webview")
-                || path.startsWith("/webview/");
+                || path.startsWith("/webview/")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.equals("/swagger-ui.html");
     }
 
     @Override
