@@ -3,6 +3,8 @@ package com.uci.pkbe.config;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -175,6 +177,7 @@ public class PkbeProperties {
         if (!"localhost".equals(rp)) {
             set.add("https://" + rp);
         }
+        set.addAll(androidApkKeyHashOrigins());
         return List.copyOf(set);
     }
 
@@ -211,6 +214,23 @@ public class PkbeProperties {
 
     public boolean assetLinksConfigured() {
         return !androidPackageName.isBlank() && !resolvedAndroidSha256Fingerprints().isEmpty();
+    }
+
+    /**
+     * Native Android Credential Manager origin when Digital Asset Links are missing or not yet
+     * crawled: {@code android:apk-key-hash:} + base64url(SHA-256(signing cert)).
+     */
+    public List<String> androidApkKeyHashOrigins() {
+        return resolvedAndroidSha256Fingerprints().stream()
+                .map(PkbeProperties::apkKeyHashOrigin)
+                .toList();
+    }
+
+    static String apkKeyHashOrigin(String hexSha256) {
+        String compact = hexSha256.replace(":", "").replace(" ", "");
+        byte[] digest = HexFormat.of().parseHex(compact);
+        String b64 = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        return "android:apk-key-hash:" + b64;
     }
 
     public String resolvedPublicBaseUrl() {

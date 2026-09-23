@@ -31,6 +31,18 @@ class PkbePropertiesTest {
         assertThat(properties.assetLinksConfigured()).isTrue();
         assertThat(properties.resolvedAndroidSha256Fingerprints()).containsExactly("aabbcc", "ddeeff");
         assertThat(properties.assetLinksSha256Fingerprints()).containsExactly("AA:BB:CC", "DD:EE:FF");
+        assertThat(properties.androidApkKeyHashOrigins())
+                .containsExactly("android:apk-key-hash:qrvM", "android:apk-key-hash:3e7_");
+        assertThat(properties.resolvedOrigins())
+                .contains("https://tunnel.example", "android:apk-key-hash:qrvM", "android:apk-key-hash:3e7_");
+    }
+
+    @Test
+    void apkKeyHashMatchesKnownSha256() {
+        // 32 zero bytes → base64url without padding
+        String zeros = "00".repeat(32);
+        assertThat(PkbeProperties.apkKeyHashOrigin(zeros))
+                .isEqualTo("android:apk-key-hash:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     }
 
     @Test
