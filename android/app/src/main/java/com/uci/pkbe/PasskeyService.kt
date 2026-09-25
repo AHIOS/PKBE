@@ -32,6 +32,9 @@ class PasskeyService(private val activity: Activity) {
 
     suspend fun assertHandover(optionsJson: String): String {
         val requestJson = ApiClient.publicKeyJson(optionsJson)
+        Log.i(TAG, "requestJson: $requestJson")
+        Log.i(TAG, "optionsJson: $optionsJson")
+
         Log.i(TAG, "assertHandover rpId=${Config.rpId} jsonLen=${requestJson.length}")
         val option = GetPublicKeyCredentialOption(requestJson)
         val request = GetCredentialRequest.Builder()
@@ -45,7 +48,7 @@ class PasskeyService(private val activity: Activity) {
         return cred.authenticationResponseJson
     }
 
-    suspend fun localPasskeyPresence(credentialIdBase64Url: String): Boolean {
+    suspend fun localPasskeyPresence(credentialIdBase64Url: String?): Boolean {
         val challenge = ByteArray(32).also { java.security.SecureRandom().nextBytes(it) }
         val options = JSONObject()
             .put("challenge", b64url(challenge))

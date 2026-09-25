@@ -2,6 +2,7 @@ package com.uci.pkbe
 
 import android.app.Activity
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,20 +29,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.uci.pkbe.viewmodel.NativeViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NativeScreen(activity: Activity) {
+fun NativeScreen(activity: Activity, viewModel: NativeViewModel) {
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val api = remember { ApiClient(context) }
     val passkeys = remember { PasskeyService(activity) }
-    var loggedIn by remember { mutableStateOf(SessionStore.token(context) != null) }
+    var loggedIn by remember { mutableStateOf(uiState.token != null) }
+
+    LaunchedEffect(uiState.token) {
+        loggedIn = uiState.token != null
+    }
 
     if (!loggedIn) {
-        LoginPane(api) { loggedIn = true }
+        LoginPane(vm = viewModel)
     } else {
         HomePane(
+            vm = viewModel,
             api = api,
             passkeys = passkeys,
             onLogout = { loggedIn = false },
@@ -51,9 +61,8 @@ fun NativeScreen(activity: Activity) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoginPane(api: ApiClient, onLoggedIn: () -> Unit) {
+private fun LoginPane(vm: NativeViewModel) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var username by remember { mutableStateOf("alice") }
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -77,21 +86,7 @@ private fun LoginPane(api: ApiClient, onLoggedIn: () -> Unit) {
                 enabled = !busy,
             )
             Button(
-                onClick = {
-                    scope.launch {
-                        busy = true
-                        error = null
-                        try {
-                            val res = api.login(username.trim().lowercase())
-                            SessionStore.save(context, res.token, res.username)
-                            onLoggedIn()
-                        } catch (e: Exception) {
-                            error = e.message
-                        } finally {
-                            busy = false
-                        }
-                    }
-                },
+                onClick = { vm.login(username, context) },
                 enabled = !busy && username.isNotBlank(),
             ) { Text("Continue") }
             error?.let {
@@ -105,16 +100,28 @@ private fun LoginPane(api: ApiClient, onLoggedIn: () -> Unit) {
 @Composable
 private fun HomePane(
     api: ApiClient,
+    vm: NativeViewModel,
     passkeys: PasskeyService,
     onLogout: () -> Unit,
 ) {
+
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var me by remember { mutableStateOf<MeResponse?>(null) }
+    var me by remember { mutableStateOf(uiState.me) }
     var error by remember { mutableStateOf<String?>(null) }
     var diagnostics by remember { mutableStateOf<String?>(null) }
     var localPasskey by remember { mutableStateOf("—") }
     var busy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        vm.getMe()
+        passkeys.localPasskeyPresence(me?.thisDeviceCredentialId)
+    }
+
+    LaunchedEffect(uiState.me) {
+        me = uiState.me
+    }
 
     fun run(block: suspend () -> Unit) {
         scope.launch {
@@ -127,43 +134,6 @@ private fun HomePane(
                 busy = false
             }
         }
-    }
-
-    suspend fun refresh(reconcileLocal: Boolean) {
-        var latest = api.me()
-        localPasskey = "—"
-        if (!reconcileLocal) {
-            me = latest
-            return
-        }
-        if (latest.thisDeviceStatus == "NONE") {
-            localPasskey = "none (not enrolled on server)"
-            me = latest
-            if (error?.contains("Cleared server enrollment") != true) error = null
-            return
-        }
-        val credId = latest.thisDeviceCredentialId
-        if (credId.isNullOrBlank()) {
-            localPasskey = "unknown (server missing credential id)"
-            me = latest
-            error = "Server did not return thisDeviceCredentialId."
-            return
-        }
-        if (passkeys.localPasskeyPresence(credId)) {
-            localPasskey = "present on device"
-            me = latest
-            error = null
-        } else {
-            localPasskey = "missing on device"
-            latest = api.unenroll()
-            me = latest
-            localPasskey = "none (cleared after local delete)"
-            error = "Passkey not found on this device. Cleared server enrollment."
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        run { refresh(true) }
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Activation") }) }) { padding ->
@@ -202,33 +172,18 @@ private fun HomePane(
             }
 
             SectionTitle("Actions")
-            Action("Refresh + reconcile") {
-                run { refresh(true) }
-            }
             Action("Run association diagnostics") {
                 run { diagnostics = PasskeyDiagnostics.runPreflight(context, api) }
             }
             Action("Enroll this device") {
-                run {
-                    val options = api.registerOptionsJson()
-                    val credential = passkeys.createPasskey(options)
-                    me = api.registerVerify(credential)
-                    localPasskey = "present"
-                    error = null
-                }
+                    vm.enrollDevice(context, passkeys)
             }
             Action("Activate via nearby device") {
                 run {
-                    if (me?.thisDeviceStatus != "PENDING") {
-                        val options = api.registerOptionsJson()
-                        val credential = passkeys.createPasskey(options)
-                        me = api.registerVerify(credential)
-                    }
-                    val assertionOptions = api.handoverOptionsJson()
-                    val assertion = passkeys.assertHandover(assertionOptions)
-                    me = api.handoverVerify(assertion)
-                    localPasskey = "present"
-                    error = null
+//                    if (me?.thisDeviceStatus != "PENDING") {
+//                        vm.enrollDevice(context, passkeys)
+//                    }
+                    vm.handoverDevice(context, passkeys)
                 }
             }
             TextButton(
@@ -286,7 +241,7 @@ private fun SectionTitle(text: String) {
 
 @Composable
 private fun Row(label: String, value: String) {
-    androidx.compose.foundation.layout.Row(Modifier.padding(vertical = 6.dp)) {
+    Row(Modifier.padding(vertical = 6.dp)) {
         Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, modifier = Modifier.weight(1f))
     }

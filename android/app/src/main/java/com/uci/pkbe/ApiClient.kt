@@ -2,6 +2,7 @@ package com.uci.pkbe
 
 import android.content.Context
 import android.util.Log
+import com.uci.pkbe.core.model.LoginResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import okhttp3.MediaType.Companion.toMediaType
@@ -18,11 +19,6 @@ class ApiClient(private val context: Context) {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    suspend fun login(username: String): LoginResponse {
-        val body = JSONObject().put("username", username).toString()
-        return post("/v1/login", body, authenticated = false)
-    }
-
     suspend fun logout() {
         try {
             send("/v1/logout", "POST", null, authenticated = true)
@@ -32,33 +28,9 @@ class ApiClient(private val context: Context) {
         SessionStore.clear(context)
     }
 
-    suspend fun me(): MeResponse = get("/v1/me")
-
     suspend fun unenroll(): MeResponse {
         val body = JSONObject().put("deviceId", DeviceIdentity.deviceId(context)).toString()
         return post("/v1/unenroll", body, authenticated = true)
-    }
-
-    suspend fun registerOptionsJson(): String {
-        val body = JSONObject().put("deviceId", DeviceIdentity.deviceId(context)).toString()
-        return send("/v1/register/options", "POST", body, authenticated = true)
-    }
-
-    suspend fun registerVerify(credentialJson: String): MeResponse {
-        val payload =
-            """{"deviceId":"${DeviceIdentity.deviceId(context)}","credential":$credentialJson}"""
-        return post("/v1/register/verify", payload, authenticated = true)
-    }
-
-    suspend fun handoverOptionsJson(): String {
-        val body = JSONObject().put("deviceId", DeviceIdentity.deviceId(context)).toString()
-        return send("/v1/handover/options", "POST", body, authenticated = true)
-    }
-
-    suspend fun handoverVerify(credentialJson: String): MeResponse {
-        val payload =
-            """{"deviceId":"${DeviceIdentity.deviceId(context)}","credential":$credentialJson}"""
-        return post("/v1/handover/verify", payload, authenticated = true)
     }
 
     suspend fun publicConfig(): PublicConfig = get("/v1/public-config", authenticated = false)

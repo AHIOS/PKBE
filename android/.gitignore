@@ -6,3 +6,6 @@ local.properties
 *.iml
 .cxx/
 captures/
+gradle/wrapper/gradle-*-bin.zip
+*.jks
+*.keystore

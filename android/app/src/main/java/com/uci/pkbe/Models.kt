@@ -3,9 +3,6 @@ package com.uci.pkbe
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LoginResponse(val token: String, val username: String)
-
-@Serializable
 data class MeResponse(
     val username: String,
     val thisDeviceId: String,

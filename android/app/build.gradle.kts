@@ -1,18 +1,20 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+//    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android.gradle.plugin)
 }
 
 android {
     namespace = "com.uci.pkbe"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.uci.pkbe"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -27,9 +29,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+//    kotlinOptions {
+//        jvmTarget = "17"
+//    }
 
     flavorDimensions += "env"
     productFlavors {
@@ -48,6 +50,24 @@ android {
             dimension = "env"
             buildConfigField("String", "PKBE_RP_ID", "\"YOUR_TUNNEL_HOST\"")
             buildConfigField("String", "PKBE_BASE_URL", "\"https://YOUR_TUNNEL_HOST\"")
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("mark.jks")
+            storePassword = "pkbe2026"
+            keyAlias = "pkbe"
+            keyPassword = "pkbe2026"
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isDebuggable = true
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
@@ -69,7 +89,17 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
 
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    implementation(libs.okhttp)
 }

@@ -15,7 +15,11 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import dagger.hilt.EntryPoint
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +32,7 @@ class MainActivity : ComponentActivity() {
                         Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("WebView") })
                     }
                     when (tab) {
-                        0 -> NativeScreen(this@MainActivity)
+                        0 -> NativeScreen(this@MainActivity, hiltViewModel())
                         else -> WebDemoScreen()
                     }
                 }
