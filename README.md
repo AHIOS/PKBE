@@ -22,6 +22,8 @@ Everything deploy-related is **environment-configurable** (no static `/.well-kno
 | `PKBE_ANDROID_SHA256_FINGERPRINTS` | Comma-separated cert fingerprints | `AA:BB:…` |
 | `PKBE_REQUIRE_DEVICE_BOUND` | Reject BE=1 at registration | `false` |
 | `PKBE_CHALLENGE_TTL_SECONDS` | Ceremony TTL | `120` |
+| `MONGODB_URI` | Application logs only (`application_logs`). Must include the database name. Unset = console only | `mongodb+srv://…/pkbe` |
+| `PKBE_LOG_TTL_DAYS` | Retention for `application_logs` | `14` |
 
 Copy [server/.env.example](server/.env.example). Inspect a running instance:
 
@@ -85,7 +87,10 @@ cd ios && xcodegen generate && open PKBE.xcodeproj
 3. Env vars (minimum):
    - `PKBE_APPLE_TEAM_ID` = your Apple Team ID (required for real passkeys / AASA)
    - `PKBE_IOS_BUNDLE_ID` = `com.uci.pkbe` (default)
+   - `MONGODB_URI` = Mongo connection string **including the database name**, if you want logs kept (Render free tier does not retain stdout). Users and ceremonies stay in memory.
    - Leave `PKBE_PUBLIC_BASE_URL` empty: Render injects `RENDER_EXTERNAL_URL`, which the app uses as the public base URL / RP ID source.
+
+Logs land in `application_logs` whenever `MONGODB_URI` is set, and expire after `PKBE_LOG_TTL_DAYS` (default 14).
 4. After deploy, check:
    - `https://<service>.onrender.com/health`
    - `https://<service>.onrender.com/v1/public-config`

@@ -25,6 +25,12 @@ services:
         value: "false"
       - key: PKBE_CHALLENGE_TTL_SECONDS
         value: "120"
+      # Application logs only. Users and ceremonies stay in memory. Include the database name.
+      - key: MONGODB_URI
+        sync: false
+      # Optional retention for the application_logs collection. Default 14 days.
+      # - key: PKBE_LOG_TTL_DAYS
+      #   value: "14"
       # Optional: force public URL instead of RENDER_EXTERNAL_URL
       # - key: PKBE_PUBLIC_BASE_URL
       #   sync: false

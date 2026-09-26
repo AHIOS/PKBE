@@ -35,10 +35,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ActivationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ActivationService.class);
 
     private final RelyingParty relyingParty;
     private final UserStore userStore;
@@ -99,6 +103,7 @@ public class ActivationService {
                 throw ApiException.unprocessable("NO_ENROLLMENT", "This device has no server enrollment to clear");
             }
         }
+        log.info("unenroll username={} deviceId={}", username, deviceId);
         return me(username, deviceId);
     }
 
@@ -130,6 +135,7 @@ public class ActivationService {
         PublicKeyCredentialCreationOptions options = relyingParty.startRegistration(startOptions);
         ceremonyStore.putRegistration(new RegistrationCeremony(
                 sessionToken, username, deviceId, options, Instant.now().plusSeconds(properties.getChallengeTtlSeconds())));
+        log.info("registration started username={} deviceId={}", username, deviceId);
         try {
             return unwrapPublicKey(options.toCredentialsCreateJson());
         } catch (JsonProcessingException e) {
@@ -175,6 +181,11 @@ public class ActivationService {
                 account.setPending(created.withStatus(CredentialStatus.PENDING));
             }
         }
+        log.info(
+                "registration finished username={} deviceId={} status={}",
+                username,
+                deviceId,
+                account.statusFor(deviceId));
         return me(username, deviceId);
     }
 
@@ -207,6 +218,7 @@ public class ActivationService {
                     account.pending().credentialId().getBase64Url(),
                     request,
                     Instant.now().plusSeconds(properties.getChallengeTtlSeconds())));
+            log.info("handover started username={} deviceId={}", username, deviceId);
             try {
                 return unwrapPublicKey(request.getPublicKeyCredentialRequestOptions().toCredentialsGetJson());
             } catch (JsonProcessingException e) {
@@ -255,6 +267,7 @@ public class ActivationService {
             }
             account.swapPendingToActive(deviceId);
         }
+        log.info("handover finished username={} deviceId={}", username, deviceId);
         return me(username, deviceId);
     }
 

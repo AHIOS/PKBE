@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +50,8 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class ActivationController {
 
+    private static final Logger log = LoggerFactory.getLogger(ActivationController.class);
+
     private final SessionStore sessionStore;
     private final ActivationService activationService;
 
@@ -69,6 +73,7 @@ public class ActivationController {
             throw ApiException.badRequest("username must be 1-64 chars [a-z0-9._-]");
         }
         String token = sessionStore.create(username);
+        log.info("login username={}", username);
         return new LoginResponse(token, username);
     }
 
